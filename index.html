@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wizytówka Cyfrowa - EXPOSED DATABASE</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://code.iconify.design/3/3.1.0/iconify.min.js"></script>
+    <style>
+        /* --- CORE CONFIG --- */
+        body {
+            font-family: 'Courier New', Courier, monospace;
+            background: #000; /* Fallback */
+            color: #fff;
+            overflow-x: hidden;
+            cursor: crosshair; /* ZMIANA: Kursor celownik */
+        }
+
+        /* --- TŁO + MATRIX --- */
+        #bg-image {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('cfx.png') no-repeat center center fixed;
+            background-size: cover;
+            z-index: -2;
+            opacity: 0.6;
+            animation: bg-breathe 10s infinite ease-in-out;
+        }
+        #matrix-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0.4; /* Matrix delikatnie na tle */
+        }
+        @keyframes bg-breathe {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+
+        /* --- TYPOGRAFIA & PANELE --- */
+        h1, h2, h3, h4, .brand-font {
+            font-family: 'Times New Roman', Times, serif;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        .raw-panel {
+            background: rgba(0, 0, 0, 0.9);
+            border: 1px solid #ff0000;
+            box-shadow: 0 0 5px rgba(255, 0, 0, 0.5);
+            transition: all 0.2s ease-out;
+            position: relative;
+            overflow: hidden;
+        }
+        .raw-panel:hover {
+            box-shadow: 6px 6px 0px #ff0000, 0 0 20px #ff0000;
+            transform: translate(-2px, -2px) scale(1.01);
+            border-color: #fff;
+            z-index: 10;
+        }
+
+        /* --- ZDJĘCIA (DIRTY STYLE) --- */
+        .evidence-img {
+            filter: grayscale(100%) contrast(150%) sepia(30%) brightness(0.8);
+            transition: all 0.1s ease-in;
+            mix-blend-mode: hard-light;
+        }
+        .group:hover .evidence-img {
+            filter: none;
+            mix-blend-mode: normal;
+        }
+
+        /* --- EFEKTY GLITCH --- */
+        .glitch-text { position: relative; animation: shake 3s infinite linear; }
+        .glitch-text::before, .glitch-text::after {
+            content: attr(data-text); position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000;
+        }
+        .glitch-text::before {
+            left: 2px; text-shadow: -1px 0 #ff003c; clip: rect(44px, 450px, 56px, 0);
+            animation: glitch-anim 5s infinite linear alternate-reverse;
+        }
+        .glitch-text::after {
+            left: -2px; text-shadow: -1px 0 #00eaff; clip: rect(44px, 450px, 56px, 0);
+            animation: glitch-anim2 5s infinite linear alternate-reverse;
+        }
+        @keyframes glitch-anim {
+            0% { clip: rect(12px, 9999px, 5px, 0); } 100% { clip: rect(70px, 9999px, 12px, 0); }
+        }
+        @keyframes glitch-anim2 {
+            0% { clip: rect(65px, 9999px, 100px, 0); } 100% { clip: rect(90px, 9999px, 4px, 0); }
+        }
+        @keyframes shake {
+            0%, 100% { transform: translate(0, 0); }
+            10%, 90% { transform: translate(-1px, -1px); }
+            50% { transform: translate(1px, 1px); }
+        }
+
+        /* --- CRT SCANLINES --- */
+        .scanlines {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.3) 50%, rgba(0,0,0,0.3));
+            background-size: 100% 4px; z-index: 900; pointer-events: none; opacity: 0.5;
+        }
+
+        /* --- START OVERLAY (DO MUZYKI) --- */
+        #start-overlay {
+            position: fixed; inset: 0; background: #000; z-index: 9999;
+            display: flex; flex-col; justify-content: center; align-items: center;
+            cursor: pointer;
+        }
+
+        /* --- KURSOR TRAIL --- */
+        .cursor-trail {
+            position: fixed; width: 8px; height: 8px; background: red;
+            pointer-events: none; z-index: 9999; border-radius: 50%;
+            mix-blend-mode: screen; transition: transform 0.1s;
+        }
+
+        /* --- LOGI SYSTEMOWE --- */
+        #system-logs {
+            position: fixed; bottom: 20px; left: 20px; width: 300px; height: 150px;
+            background: rgba(0,0,0,0.8); border: 1px solid red;
+            font-family: monospace; font-size: 10px; color: #0f0;
+            overflow: hidden; padding: 10px; z-index: 800; pointer-events: none;
+        }
+        #system-logs p { margin: 0; opacity: 0.8; text-shadow: 0 0 2px #0f0; }
+
+        /* --- LICZNIK DANYCH --- */
+        #data-counter {
+            position: fixed; top: 80px; right: 20px;
+            background: #000; border: 1px solid red; color: red;
+            padding: 5px 10px; font-family: monospace; font-weight: bold;
+            z-index: 800;
+        }
+
+        /* --- AUTODESTRUKCJA --- */
+        .nuke-flash {
+            animation: nuke 0.5s forwards;
+        }
+        @keyframes nuke {
+            0% { filter: invert(0); transform: scale(1); }
+            10% { filter: invert(1); transform: scale(1.1) rotate(2deg); }
+            20% { filter: invert(0); transform: scale(1.1) rotate(-2deg); }
+            100% { filter: brightness(100) contrast(200); opacity: 0; }
+        }
+
+        /* --- ANIMACJE WEJŚCIA --- */
+        .reveal { opacity: 0; transform: translateY(30px); transition: all 0.6s ease; }
+        .reveal.active { opacity: 1; transform: translateY(0); }
+    </style>
+</head>
+<body class="text-zinc-300 antialiased selection:bg-red-600 selection:text-black">
+
+    <!-- AUDIO (Autoplay po kliknięciu w overlay) -->
+    <audio id="bg-music" loop>
+        <source src="music.mp3" type="audio/mpeg">
+    </audio>
+
+    <!-- OVERLAY STARTOWY -->
+    <div id="start-overlay">
+        <div class="text-center">
+            <h1 class="text-6xl text-red-600 glitch-text mb-4" data-text="SYSTEM SECURED">SYSTEM SECURED</h1>
+            <p class="text-white font-mono animate-pulse">[ KLIKNIJ ABY UZYSKAĆ DOSTĘP ]</p>
+        </div>
+    </div>
+
+    <!-- TŁO I EFEKTY -->
+    <div id="bg-image"></div>
+    <canvas id="matrix-canvas"></canvas>
+    <div class="scanlines"></div>
+
+    <!-- WIDGETY UI -->
+    <div id="system-logs"></div>
+    <div id="data-counter">EXPOSED RECORDS: <span id="counter-val">14201</span></div>
+
+    <!-- Navigation -->
+    <nav class="fixed top-0 w-full z-50 border-b-2 border-red-600 bg-black/90 backdrop-blur-sm">
+        <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <span class="iconify text-red-600 animate-pulse" data-icon="lucide:siren" style="font-size: 24px;"></span>
+                <span class="brand-font text-red-600 text-xl tracking-widest glitch-text" data-text="PROFIL UŻYTKOWNIKA">PROFIL UŻYTKOWNIKA</span>
+            </div>
+            <div class="hidden md:flex gap-8 text-sm font-bold uppercase tracking-widest">
+                <a href="#details" class="text-white hover:text-red-600 transition-colors">Dane</a>
+                <a href="#interpol" class="text-white hover:text-red-600 transition-colors">Interpol</a>
+                <a href="#footer" class="text-white hover:text-red-600 transition-colors">Status</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="relative z-10 pt-32 pb-20 px-6">
+        
+        <!-- Hero Section -->
+        <section class="max-w-7xl mx-auto mb-24 flex flex-col items-center text-center">
+            <div class="reveal inline-flex items-center gap-2 px-3 py-1 border border-red-600 bg-black text-red-600 text-xs font-bold uppercase mb-8">
+                <span class="relative flex h-3 w-3">
+                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                  <span class="relative inline-flex rounded-full h-3 w-3 bg-red-600"></span>
+                </span>
+                Status: ZAGROŻONY
+            </div>
+            
+            <h1 class="text-5xl md:text-7xl lg:text-8xl text-white mb-6 leading-none tracking-tight reveal">
+                MOJE <br>
+                <span class="text-red-600 bg-zinc-900 px-2 glitch-text" data-text="INFORMACJE">INFORMACJE</span>
+            </h1>
+            
+            <p class="reveal text-lg md:text-xl text-zinc-400 max-w-2xl font-mono leading-relaxed mb-10 border-l-4 border-red-600 pl-4 text-left md:text-center md:border-none md:pl-0">
+                <span id="typewriter-text"></span><span class="animate-pulse">_</span>
+            </p>
+
+            <div class="reveal flex flex-col md:flex-row gap-4">
+                <a href="#details" class="raw-button inline-flex items-center justify-center px-8 py-4 text-sm font-bold text-red-600 border-2 border-red-600 bg-black uppercase tracking-widest hover:bg-red-600 hover:text-black transition-all hover:scale-105">
+                    ODSZYFRUJ DANE
+                </a>
+            </div>
+        </section>
+
+        <!-- Bento Grid: INFO -->
+        <section id="details" class="max-w-7xl mx-auto">
+            <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                
+                <!-- Main Entity -->
+                <div class="raw-panel col-span-1 md:col-span-2 lg:col-span-2 row-span-2 p-8 flex flex-col justify-between reveal">
+                    <div>
+                        <div class="w-12 h-12 bg-red-600 flex items-center justify-center mb-6 text-black border-2 border-white animate-spin-slow">
+                            <span class="iconify" data-icon="lucide:briefcase" style="font-size: 24px;"></span>
+                        </div>
+                        <h3 class="text-3xl text-white mb-2 glitch-text" data-text="Vector Media">Vector Media</h3>
+                        <h4 class="text-xl text-zinc-400 mb-4">Wiktor Ciaciuch</h4>
+                        <p class="text-sm md:text-base text-zinc-300 font-mono border-t border-red-900/50 pt-4 mt-4">
+                            [ALERT] Podmiot podejrzany o działalność sabotażową.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- NIP & REGON -->
+                <div class="raw-panel col-span-1 md:col-span-1 p-6 reveal hover:bg-red-900/20">
+                    <span class="iconify text-red-600 mb-4" data-icon="lucide:file-text" style="font-size: 32px;"></span>
+                    <h4 class="text-xl text-white mb-1">NIP</h4>
+                    <p class="text-2xl text-white font-mono font-bold tracking-wider glitch-text" data-text="9532805588">9532805588</p>
+                </div>
+
+                <div class="raw-panel col-span-1 md:col-span-1 p-6 reveal hover:bg-red-900/20">
+                    <span class="iconify text-red-600 mb-4" data-icon="lucide:hash" style="font-size: 32px;"></span>
+                    <h4 class="text-xl text-white mb-1">REGON</h4>
+                    <p class="text-2xl text-white font-mono font-bold tracking-wider glitch-text" data-text="529390572">529390572</p>
+                </div>
+                
+                <!-- Phone -->
+                 <div class="raw-panel col-span-1 md:col-span-1 p-6 reveal hover:bg-red-900/20">
+                    <span class="iconify text-red-600 mb-4" data-icon="lucide:phone" style="font-size: 32px;"></span>
+                    <h4 class="text-xl text-white mb-1">TELEFON</h4>
+                    <p class="text-lg text-white font-mono tracking-wider">+48 696 917 015</p>
+                </div>
+
+                <!-- PKD -->
+                 <div class="raw-panel col-span-1 md:col-span-1 p-6 reveal hover:bg-red-900/20">
+                    <span class="iconify text-red-600 mb-4" data-icon="lucide:activity" style="font-size: 32px;"></span>
+                    <h4 class="text-xl text-white mb-1">PKD</h4>
+                    <p class="text-lg text-white font-mono tracking-wider">73.11.Z</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- SEKCJA INTERPOL -->
+        <section id="interpol" class="max-w-7xl mx-auto mt-24">
+            <div class="raw-panel p-8 md:p-12 bg-black border-2 border-red-600 reveal">
+                <div class="flex flex-col md:flex-row items-center justify-between gap-6 mb-12 border-b-2 border-red-600 pb-8">
+                    <div>
+                        <h2 class="text-5xl md:text-7xl text-red-600 uppercase tracking-tighter brand-font mb-2 glitch-text" data-text="INTERPOL">INTERPOL</h2>
+                        <p class="text-white text-base font-mono bg-red-600/20 px-4 py-1 inline-block">RED NOTICE / MATERIAŁ DOWODOWY</p>
+                    </div>
+                    <div class="animate-bounce w-20 h-20 border-2 border-red-600 flex items-center justify-center bg-black text-red-600">
+                        <span class="iconify" data-icon="lucide:siren" style="font-size: 40px;"></span>
+                    </div>
+                </div>
+            
+                <!-- Galeria Dowodów -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    
+                    <!-- RED NOTICE MAIN -->
+                    <figure class="md:col-span-2 raw-panel p-2 bg-zinc-900 group reveal">
+                        <div class="relative border border-red-600/50 overflow-hidden">
+                            <img src="4d7f482af441-RedNoticeEnLR.jpg" class="evidence-img w-full h-auto max-h-[600px] object-contain block mx-auto" loading="lazy">
+                        </div>
+                        <div class="mt-4 flex justify-between items-center px-4 pb-2">
+                            <span class="text-sm font-mono text-red-500 uppercase tracking-widest">[DOWÓD GŁÓWNY]</span>
+                            <span class="iconify text-red-600 animate-spin" data-icon="lucide:alert-octagon"></span>
+                        </div>
+                    </figure>
+            
+                    <!-- Obrazki Pętla -->
+                    <figure class="raw-panel p-2 bg-zinc-900 group reveal">
+                        <div class="relative border border-red-600/50">
+                            <img src="42d79d67-0a8b-45d3-a5f7-2f332d5c64c5.png" class="evidence-img w-full h-auto object-contain block">
+                        </div>
+                        <div class="mt-4 px-4 pb-2"><span class="text-sm font-mono text-zinc-500">FIG. 002</span></div>
+                    </figure>
+
+                    <figure class="raw-panel p-2 bg-zinc-900 group reveal">
+                        <div class="relative border border-red-600/50">
+                            <img src="IMG_1761.png" class="evidence-img w-full h-auto object-contain block">
+                        </div>
+                        <div class="mt-4 px-4 pb-2"><span class="text-sm font-mono text-zinc-500">FIG. 003</span></div>
+                    </figure>
+
+                    <figure class="raw-panel p-2 bg-zinc-900 group reveal">
+                        <div class="relative border border-red-600/50">
+                            <img src="Zrzut_ekranu_2026-01-11_111024.png" class="evidence-img w-full h-auto object-contain block">
+                        </div>
+                        <div class="mt-4 px-4 pb-2"><span class="text-sm font-mono text-zinc-500">FIG. 004</span></div>
+                    </figure>
+
+                    <figure class="raw-panel p-2 bg-zinc-900 group reveal">
+                        <div class="relative border border-red-600/50">
+                            <img src="Zrzut_ekranu_2026-01-10_050737.png" class="evidence-img w-full h-auto object-contain block">
+                        </div>
+                        <div class="mt-4 px-4 pb-2"><span class="text-sm font-mono text-zinc-500">FIG. 005</span></div>
+                    </figure>
+					
+					 <figure class="raw-panel p-2 bg-zinc-900 group reveal">
+                        <div class="relative border border-red-600/50">
+                            <img src="OrderSummary202601113048963409637450.png" class="evidence-img w-full h-auto object-contain block">
+                        </div>
+                        <div class="mt-4 px-4 pb-2"><span class="text-sm font-mono text-zinc-500">FIG. 006</span></div>
+                    </figure>
+					
+					 <figure class="raw-panel p-2 bg-zinc-900 group reveal">
+                        <div class="relative border border-red-600/50">
+                            <img src="OrderSummary202601118154604600997450.png" class="evidence-img w-full h-auto object-contain block">
+                        </div>
+                        <div class="mt-4 px-4 pb-2"><span class="text-sm font-mono text-zinc-500">FIG. 007</span></div>
+                    </figure>
+					
+					 <figure class="raw-panel p-2 bg-zinc-900 group reveal">
+                        <div class="relative border border-red-600/50">
+                            <img src="awdsss.png" class="evidence-img w-full h-auto object-contain block">
+                        </div>
+                        <div class="mt-4 px-4 pb-2"><span class="text-sm font-mono text-zinc-500">FIG. 008</span></div>
+                    </figure>
+					
+					 <figure class="raw-panel p-2 bg-zinc-900 group reveal">
+                        <div class="relative border border-red-600/50">
+                            <img src="imawdage.png" class="evidence-img w-full h-auto object-contain block">
+                        </div>
+                        <div class="mt-4 px-4 pb-2"><span class="text-sm font-mono text-zinc-500">FIG. 009</span></div>
+                    </figure>
+					
+					 <figure class="raw-panel p-2 bg-zinc-900 group reveal">
+                        <div class="relative border border-red-600/50">
+                            <img src="imawdawdawdage.png" class="evidence-img w-full h-auto object-contain block">
+                        </div>
+                        <div class="mt-4 px-4 pb-2"><span class="text-sm font-mono text-zinc-500">FIG. 010</span></div>
+                    </figure>
+					
+					 <figure class="raw-panel p-2 bg-zinc-900 group reveal">
+                        <div class="relative border border-red-600/50">
+                            <img src="imawdawwdaage.png" class="evidence-img w-full h-auto object-contain block">
+                        </div>
+                        <div class="mt-4 px-4 pb-2"><span class="text-sm font-mono text-zinc-500">FIG. 011</span></div>
+                    </figure>
+					
+					 <figure class="raw-panel p-2 bg-zinc-900 group reveal">
+                        <div class="relative border border-red-600/50">
+                            <img src="IMG_0446.png" class="evidence-img w-full h-auto object-contain block">
+                        </div>
+                        <div class="mt-4 px-4 pb-2"><span class="text-sm font-mono text-zinc-500">FIG. 012</span></div>
+                    </figure>
+
+                    <!-- VIDEO -->
+                    <figure class="raw-panel p-2 bg-zinc-900 group reveal border-2 border-red-600 hover:border-white">
+                        <video class="w-full h-auto object-contain block grayscale contrast-125 group-hover:grayscale-0 transition-all" controls loop muted playsinline>
+                            <source src="DOMCwela.mp4" type="video/mp4">
+                        </video>
+                        <div class="mt-4 px-4 pb-2"><span class="text-sm font-mono text-red-500 animate-pulse">EVIDENCE VIDEO #1</span></div>
+                    </figure>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer id="footer" class="max-w-7xl mx-auto mt-24 mb-24 text-center reveal">
+            <div class="raw-panel p-8 border-t-4 border-red-600 bg-black">
+                <h2 class="text-3xl text-white mb-4">OSTRZEŻENIE KOŃCOWE</h2>
+                <p class="text-zinc-500 font-mono mb-8">Wszystkie akcje zostały zarejestrowane.</p>
+                
+                <!-- AUTO DESTRUCT BTN -->
+                <button onclick="selfDestruct()" class="group relative px-8 py-4 bg-red-900/20 border-2 border-red-600 text-red-600 font-bold uppercase tracking-widest hover:bg-red-600 hover:text-black transition-all overflow-hidden">
+                    <span class="relative z-10 flex items-center gap-2">
+                        <span class="iconify" data-icon="lucide:skull"></span>
+                        ZNISZCZ TO
+                    </span>
+                    <div class="absolute inset-0 bg-red-600 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left z-0"></div>
+                </button>
+            </div>
+        </footer>
+
+    </main>
+
+    <!-- SCRIPTS -->
+    <script>
+        // 1. START SYSTEMU (Audio + Overlay)
+        const overlay = document.getElementById('start-overlay');
+        const audio = document.getElementById('bg-music');
+        overlay.addEventListener('click', () => {
+            overlay.style.opacity = '0';
+            setTimeout(() => overlay.remove(), 500);
+            audio.volume = 0.5;
+            audio.play().catch(e => console.log("Audio block", e));
+        });
+
+        // 2. MATRIX RAIN (RED)
+        const canvas = document.getElementById('matrix-canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        const katakana = 'アァカサタナハマヤャラワガザダバパイィキシチニヒミリヰギジヂビピウゥクスツヌフムユュルグズブヅプエェケセテネヘメレヱゲゼデベペオォコソトノホモヨョロヲゴゾドボポヴッン0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        const fontSize = 16;
+        const columns = canvas.width / fontSize;
+        const drops = Array(Math.floor(columns)).fill(1);
+
+        function drawMatrix() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#FF0000'; // Czerwony Matrix
+            ctx.font = fontSize + 'px monospace';
+            for(let i = 0; i < drops.length; i++) {
+                const text = katakana.charAt(Math.floor(Math.random() * katakana.length));
+                ctx.fillText(text, i*fontSize, drops[i]*fontSize);
+                if(drops[i]*fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
+                drops[i]++;
+            }
+        }
+        setInterval(drawMatrix, 30);
+
+        // 3. LOGI SYSTEMOWE
+        const logs = document.getElementById('system-logs');
+        const logMessages = [
+            "ACCESSING MAINFRAME...", "BYPASSING FIREWALL...", "DECRYPTING USER DATA...", 
+            "TRACKING IP: 192.168.0.1...", "DOWNLOADING FILES...", "ROOT ACCESS GRANTED", 
+            "UPLOADING TROJAN...", "SCANNING PORTS...", "CRACKING PASSWORD HASH..."
+        ];
+        setInterval(() => {
+            const p = document.createElement('p');
+            p.innerText = `> ${logMessages[Math.floor(Math.random() * logMessages.length)]}`;
+            logs.prepend(p);
+            if(logs.children.length > 10) logs.lastChild.remove();
+        }, 800);
+
+        // 4. LICZNIK DANYCH
+        const counter = document.getElementById('counter-val');
+        let count = 14201;
+        setInterval(() => {
+            count += Math.floor(Math.random() * 5);
+            counter.innerText = count;
+        }, 200);
+
+        // 5. TYPEWRITER EFFECT
+        const text = "Profesjonalne usługi reklamowe i medialne - Vector Media. Wiktor Ciaciuch.";
+        let i = 0;
+        const typeTarget = document.getElementById('typewriter-text');
+        function typeWriter() {
+            if (i < text.length) {
+                typeTarget.innerHTML += text.charAt(i);
+                i++;
+                setTimeout(typeWriter, 50);
+            }
+        }
+        // Start typing po zamknięciu overlayu
+        overlay.addEventListener('click', () => setTimeout(typeWriter, 500));
+
+        // 6. AUTODESTRUKCJA
+        function selfDestruct() {
+            document.body.classList.add('nuke-flash');
+            audio.playbackRate = 2.0;
+            setTimeout(() => {
+                document.body.innerHTML = '<div style="display:flex;justify-content:center;align-items:center;height:100vh;background:black;color:red;font-family:monospace;font-size:3em;">CONNECTION TERMINATED<br>ACCESS DENIED</div>';
+            }, 1000);
+        }
+
+        // 7. SCROLL REVEAL
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if(entry.isIntersecting) entry.target.classList.add('active');
+            });
+        });
+        document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+        // 8. KURSOR TRAIL
+        document.addEventListener('mousemove', function(e) {
+            const dot = document.createElement('div');
+            dot.className = 'cursor-trail';
+            dot.style.left = e.pageX + 'px';
+            dot.style.top = e.pageY + 'px';
+            document.body.appendChild(dot);
+            setTimeout(() => { dot.style.transform = 'scale(0)'; }, 50);
+            setTimeout(() => { dot.remove(); }, 300);
+        });
+    </script>
+</body>
+</html>
